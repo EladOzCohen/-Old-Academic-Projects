@@ -1,0 +1,323 @@
+---
+title: "MAMDA"
+author: "Itamar Zanger & Elad Oz Cohen"
+date: "4/24/2021"
+output: rmdformats::readthedown
+---
+
+# Packages
+#### - R-studio is an open source program based of various packages.
+#### - When it comes to R, Google is your best friend  :)
+
+```{r message=FALSE, warning=FALSE}
+pacman::p_load(tidyverse,corrplot,finalfit,MASS,caret,olsrr,rpart,rpart.plot,
+               randomForest,randomForestExplainer,readxl,caTools,purrr)
+```
+
+
+# Loading Raw Data
+#### - The raw data is a mixture of many types of variables (continues,discrete,text,etc...)
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# N=5475 
+seker_pratic <- read_csv("D:/OneDrive/EladsB/CognitiveNeuroscience/praktikum/Final_Data.csv")
+```
+
+
+
+# Pre-processing Data
+#### - Re-writing the varibles and values to have meaningful names.
+
+```{r}
+
+# Rearrange Forces
+names(seker_pratic)[names(seker_pratic) == "q53"] <- "force" #air-force/ sea-force/ ground-force/ intellegence-force..
+
+seker_pratic$force <- ifelse(seker_pratic$force == 12, 'Airforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 13, 'Seaforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 11, 'Intellegence',seker_pratic$force)
+
+
+seker_pratic$force <- ifelse(seker_pratic$force == 1,   'Landforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 2,   'Landforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 3,   'Landforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 5,   'Landforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 28,  'Landforce',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 32,  'Landforce',seker_pratic$force)
+
+
+seker_pratic$force <- ifelse(seker_pratic$force == 4,   'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 8,   'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 9,   'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 10,  'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 14,  'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 15,  'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 21,  'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 24,  'TomCal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 25,  'TomCal',seker_pratic$force)
+
+
+seker_pratic$force <- ifelse(seker_pratic$force == 17,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 37,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 40,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 41,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 42,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 43,   'Matcal',seker_pratic$force)
+seker_pratic$force <- ifelse(seker_pratic$force == 44,   'Matcal',seker_pratic$force)
+
+
+# Give Name For All The Demographic Data
+
+names(seker_pratic)[names(seker_pratic) == "q51"] <- "gender" #1 men, 2 women.
+names(seker_pratic)[names(seker_pratic) == "q52"] <- "rank"
+
+names(seker_pratic)[names(seker_pratic) == "q54"] <- "pikud" #
+names(seker_pratic)[names(seker_pratic) == "q55"] <- "tsadah" #how much the MAN (only men) is fit for combative army service
+names(seker_pratic)[names(seker_pratic) == "q56"] <- "profile" #the military profile 97/81/....
+names(seker_pratic)[names(seker_pratic) == "q57"] <- "kaba" # kaba == 0 is regarded as NA 
+names(seker_pratic)[names(seker_pratic) == "q58"] <- "dapar" # dapar == 0 is NA
+names(seker_pratic)[names(seker_pratic) == "q59"] <- "age" 
+names(seker_pratic)[names(seker_pratic) == "q60"] <- "family_status" #married/divorced/single...
+names(seker_pratic)[names(seker_pratic) == "q61"] <- "number_of_kids" 
+names(seker_pratic)[names(seker_pratic) == "q62"] <- "city" #the city names are cooded
+names(seker_pratic)[names(seker_pratic) == "q63"] <- "model_keva" #old/new keva model: 2 - old keva model | 3 - new keva model 
+names(seker_pratic)[names(seker_pratic) == "q65"] <- "nagad_type" #what the nagad really does (relevent only for nagad)
+names(seker_pratic)[names(seker_pratic) == "q66"] <- "education" #high-school/BA/MA
+names(seker_pratic)[names(seker_pratic) == "q68"] <- "long_keva" #Not all people have havad (value 0). The havad is the military way of assesing your fittness for further military service
+names(seker_pratic)[names(seker_pratic) == "q69"] <- "short_keva" # Promotion fitness in the short term 
+names(seker_pratic)[names(seker_pratic) == "q70"] <- "bashel" #does the officer is ready to be promoted (value 0 means he dosent have havad)
+names(seker_pratic)[names(seker_pratic) == "q72"] <- "job_succes" #how much the person is succeeding in his job.
+names(seker_pratic)[names(seker_pratic) == "q73"] <- "activity_scale" #how much the person is combative 
+names(seker_pratic)[names(seker_pratic) == "q74"] <- "rank_groups" #what kind of keva (suprime or low keva) 
+names(seker_pratic)[names(seker_pratic) == "q78"] <- "rank_type" #officer(number 2)/nagad (number 1)
+names(seker_pratic)[names(seker_pratic) == "q79"] <- "officer_type" #what the officer really does (value of 0 means nagad)
+names(seker_pratic)[names(seker_pratic) == "q81"] <- "kid_under_9" # 1 = has kids under aged 9, 2 = dosent has kids under the age 9
+ 
+# Re-encodign model keva values
+seker_pratic$model_keva <- ifelse(seker_pratic$model_keva == 1, 'unknown',seker_pratic$model_keva)
+seker_pratic$model_keva <- ifelse(seker_pratic$model_keva == 2, 'old',seker_pratic$model_keva)
+seker_pratic$model_keva <- ifelse(seker_pratic$model_keva == 3, 'new',seker_pratic$model_keva)
+
+# Recoding family status
+seker_pratic$family_status <-ifelse(seker_pratic$family_status == "נ",'married',seker_pratic$family_status)
+seker_pratic$family_status <-ifelse(seker_pratic$family_status == "ג",'divorced',seker_pratic$family_status)
+seker_pratic$family_status <-ifelse(seker_pratic$family_status == "א",'widow',seker_pratic$family_status)
+seker_pratic$family_status <-ifelse(seker_pratic$family_status == "ר",'single',seker_pratic$family_status)
+```
+
+# Post-Processing
+
+#### - After processing the raw data, create new dataset with variables we can use.
+
+
+```{r}
+data_numeric <- seker_pratic[c( "q1", "q2" , "q3", "q4",  "q5",  "q6"  ,"q7",  "q8",  "q9",
+                                "q15", "q16" ,"q17" ,"q18", "q19", "q20", "q21" ,"q22", "q23", "q24", "q25",
+                                "q26", "q27", "q28", "q29", "q30" ,"q31", "q32", "q33" ,"q35" ,"q36", "q37", 
+                                "q39", "q40", "q41","q42", "q44", "q46" ,"gender","rank_type",
+                                "force","pikud","profile","family_status","number_of_kids",
+                                "kid_under_9","model_keva","education","activity_scale",
+                                "job_succes","tsadah" ,"officer_type","nagad_type","rank_groups",
+                                "bashel","short_keva","rank","age","dapar","kaba" 
+                                )]
+
+
+
+names(data_numeric)[names(data_numeric) == "q1"] <- "service_satisfaction" 
+names(data_numeric)[names(data_numeric) == "q6"] <- "service_continue" 
+names(data_numeric)[names(data_numeric) == "q27"] <- "service_fulfilment" 
+names(data_numeric)[names(data_numeric) == "q3"] <- "service_pride" 
+names(data_numeric)[names(data_numeric) == "q36"] <- "invo_type" 
+names(data_numeric)[names(data_numeric) == "q18"] <- "army_self_develop" 
+names(data_numeric)[names(data_numeric) == "q37"] <- "Nights_sleep_base" 
+names(data_numeric)[names(data_numeric) == "q32"] <- "Work_Invo_Type" 
+names(data_numeric)[names(data_numeric) == "q26"] <- "family_work_balance" #1 - agree alot
+                                                                           #5 - dont agree alot
+
+names(data_numeric)[names(data_numeric) == "q4"] <- "salary_satisfaction" # 1- happy alot about salary
+                                                                          # 5 - not happy about salary
+
+
+```
+
+# Arrange The Data For Model
+
+#### - Removing Missing-Values ('NA')
+#### - Transforming our dependent variable ('service continue') to dichotomic.
+
+```{r}
+# Change Class To Factor
+
+data_numeric$gender <- as.factor(data_numeric$gender)
+data_numeric$gender <- ifelse(data_numeric$gender == 1,'Male','Female')
+data_numeric$force <- as.factor(data_numeric$force)
+data_numeric$education <- as.factor(data_numeric$education)
+data_numeric$rank <- as.factor(data_numeric$rank)
+data_numeric$gender <- as.factor(data_numeric$gender)
+
+# Rearrange the Predicted Value (Remove Na)
+
+data_numeric$service_continue <- ifelse(data_numeric$service_continue == 6, NA,data_numeric$service_continue)
+data_numeric$service_continue <- ifelse(data_numeric$service_continue == 7, NA,data_numeric$service_continue)
+data_numeric[data_numeric == 6] <- NA
+data_numeric <- na.omit(data_numeric)
+
+
+
+# Change The Predicted Value To Dichotomic (High/Low)
+
+data_numeric$service_continue <- ifelse(data_numeric$service_continue == 1,'High',data_numeric$service_continue)
+data_numeric$service_continue <- ifelse(data_numeric$service_continue == 2,'High',data_numeric$service_continue)
+data_numeric$service_continue <- ifelse(data_numeric$service_continue != 'High','Low',data_numeric$service_continue)
+data_numeric$service_continue <- as.factor(data_numeric$service_continue)
+
+```
+
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+
+
+# Modeling 
+
+## Splitting Data To Test/Train
+##### - Since we care about prediction, we split the entire data into "train" set and "test" set.
+##### - This Allows us check how good our model generalizes to unseen data.
+```{r}
+
+
+set.seed(1)
+s <- sample(2428,2428)
+train_data <-data_numeric[s,] 
+train_data <- na.omit(train_data)
+test_data <- data_numeric[-s,]
+test_data <- na.omit(test_data)
+```
+
+### * Why We Model With Trees? - Because we use discrete data to classify discrete DV.  
+<br>
+ 
+### *  Pros/Cons for each method:
+
+                       Decision Tree | Random Forest
+          -------------------------- |-----------------------
+     Pros|        Easy to understand | Good at generalizing |                  
+     Cons| Mediocere at generalizing | Hard to understand   |  
+ 
+<br>
+<br>
+<br>
+
+## The Actual Modeling: Decision Tree Model For Service Continuation. 
+#### - A decision tree is a classification method based on various decision rules. 
+#### - Each time the tree splits the data based on a decision criterion.
+#### - The process repeats untill there are no more meaningful decision rules.
+```{r}
+
+
+
+tree_model <- rpart(service_continue ~ . , data = train_data, method = "class")
+pred_model <- predict(tree_model,data_numeric,type = "class")
+table(data_numeric$service_continue,pred_model)
+rpart.plot(tree_model,type = 2, extra = 100,cex=0.9)
+
+#Note: The percentage you get in the bottom of the node is the percentage of observations of your dataset (you'll always start with 100%)
+
+
+```
+
+
+## Random Forest Model For Predicting Service Continuation. 
+```{r}
+rf <- randomForest(service_continue ~ ., data = train_data,importance = T)
+```
+
+## The accuracy of our model is 76.28% (not bad).
+```{r}
+rf
+```
+
+```{r}
+varImpPlot(rf)
+
+```
+<br>
+<br>
+<br>
+
+# Predicting Gender (!?) 
+## Arranging The Data For Model
+```{r}
+# Splitting Data To Test/Train sets.
+set.seed(1)
+s <- sample(2428,2428)
+train_data <-data_numeric[s,] 
+train_data <- na.omit(train_data)
+test_data <- data_numeric[-s,]
+test_data <- na.omit(test_data)
+```
+
+## Tree Model For Predicting Gender
+```{r}
+tree_model <- rpart(gender ~ . , data = train_data, method = "class")
+pred_model <- predict(tree_model,data_numeric,type = "class")
+table(data_numeric$gender,pred_model)
+rpart.plot(tree_model,type = 2, extra = 100,cex=0.9)
+
+```
+
+## Random Forest Model For Predicting Gender
+```{r}
+rf <- randomForest(gender ~ ., data = train_data,importance = T)
+varImpPlot(rf)
+rf
+```
+
+# Arrange The Data For Model Without Tsadah
+```{r}
+set.seed(1)
+data_numeric <- subset(data_numeric, select = -c(tsadah))
+
+
+s <- sample(2428,2428)
+train_data <-data_numeric[s,] 
+train_data <- na.omit(train_data)
+test_data <- data_numeric[-s,]
+test_data <- na.omit(test_data)
+```
+
+# Tree Model For Gender Without Tsadah
+```{r}
+tree_model <- rpart(gender ~ . , data = train_data, method = "class")
+pred_model <- predict(tree_model,test_data,type = "class")
+rpart.plot(tree_model,type = 2, extra = 100,cex=0.9) 
+```
+
+# Rendom Forest Model For Gender Without Tsadah
+```{r}
+rf <- randomForest(gender ~ ., data = train_data,importance = T)
+rf
+varImpPlot(rf)
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+data_numeric <- read_csv("D:/OneDrive/EladsB/CognitiveNeuroscience/praktikum/seker_only_numerical.csv")
+```
+
+#Correlation plot
+```{r}
+data_numeric <- as.data.frame(data_numeric)
+#Before missing data manipulation
+data_numeric[data_numeric == 6] <- NA
+data_numeric[data_numeric == 7] <- NA
+data_numeric <- na.omit(data_numeric)
+
+#Looping through all the NA and replacing them with themean value of that column
+for(i in 1:ncol(data_numeric)){
+  data_numeric[is.na(data_numeric[,i]), i] <- mean(data_numeric[,i], na.rm = TRUE)
+}
+corrplot(cor(data_numeric),method="color",cl.lim = c(-1,1))
+
+
+```
